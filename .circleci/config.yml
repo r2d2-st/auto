@@ -16,7 +16,7 @@ jobs:
       - run: composer install -n --prefer-dist
         # prepare the database
       - run: touch /tmp/testing.sqlite
-      - run: php artisan migrate --database=sqlite --force
+#      - run: php artisan migrate --database=sqlite --force
       - run: ./vendor/bin/phpunit
       - run: sudo rm /tmp/testing.sqlite
 
