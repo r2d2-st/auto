@@ -1,9 +1,168 @@
 version: 2.1
+
+orbs:
+  aws-cli: circleci/aws-cli@0.1.1
+  aws-ecr: circleci/aws-ecr@3.0.0
+  kubernetes: circleci/kubernetes@0.1.0
+
 jobs:
   build:
-    docker: 
-      - image: circleci/node:4.8.2 # the primary container, where your job's commands are run
+    docker:
+      - image: circleci/python
     steps:
-      - checkout # check out the code in the project directory
-      - run: echo "hello world" # run the `echo` command
-      - run: echo "This is my first job"
+      - checkout
+      - setup_remote_docker
+      - aws-cli/install
+      - aws-cli/configure
+      - aws-ecr/ecr-login
+      - run:
+          name: Build Docker images
+          command: |
+            docker --version
+      - run:
+          name: Push images to Amazon ECR
+          command: |
+            docker --version
+
+
+
+
+
+
+
+
+
+
+
+
+#version: 2.1
+#
+#orbs:
+#  aws-cli: circleci/aws-cli@0.1.1
+#  aws-ecr: circleci/aws-ecr@3.0.0
+#  kubernetes: circleci/kubernetes@0.1.0
+#
+#jobs:
+#  build:
+#    docker:
+#      - image: circleci/python
+#    steps:
+#      - checkout
+#      - setup_remote_docker
+#      - aws-cli/install
+#      - aws-cli/configure
+#      - aws-ecr/ecr-login
+#      - run:
+#          name: Build Docker images
+#          command: |
+#            docker build -t $AWS_ECR_ACCOUNT_URL/hello-chef-api:latest -t $AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1 --target app .
+#            docker build -t $AWS_ECR_ACCOUNT_URL/hello-chef-api-web:latest -t $AWS_ECR_ACCOUNT_URL/hello-chef-api-web:$CIRCLE_SHA1 --target web .
+#      - run:
+#          name: Push images to Amazon ECR
+#          command: |
+#            docker push $AWS_ECR_ACCOUNT_URL/hello-chef-api:latest
+#            docker push $AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1
+#            docker push $AWS_ECR_ACCOUNT_URL/hello-chef-api-web:latest
+#            docker push $AWS_ECR_ACCOUNT_URL/hello-chef-api-web:$CIRCLE_SHA1
+#  build-staging:
+#    docker:
+#      - image: circleci/python
+#    steps:
+#      - checkout
+#      - setup_remote_docker
+#      - aws-cli/install
+#      - aws-cli/configure
+#      - aws-ecr/ecr-login
+#      - run:
+#          name: Build Docker images
+#          command: |
+#            docker build -t $AWS_ECR_ACCOUNT_URL/hello-chef-api:staging -t $AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1 --target app .
+#            docker build -t $AWS_ECR_ACCOUNT_URL/hello-chef-api-web:staging -t $AWS_ECR_ACCOUNT_URL/hello-chef-api-web:$CIRCLE_SHA1 --target web .
+#      - run:
+#          name: Push images to Amazon ECR
+#          command: |
+#            docker push $AWS_ECR_ACCOUNT_URL/hello-chef-api:staging
+#            docker push $AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1
+#            docker push $AWS_ECR_ACCOUNT_URL/hello-chef-api-web:staging
+#            docker push $AWS_ECR_ACCOUNT_URL/hello-chef-api-web:$CIRCLE_SHA1
+#  copy-staging-data:
+#    docker:
+#      - image: circleci/python
+#    steps:
+#      - aws-cli/install
+#      - aws-cli/configure
+#      - run:
+#          name: Copy S3 contents from production to staging bucket
+#          command: |
+#            aws s3 sync s3://hello-chef-api s3://hello-chef-api-staging
+#  deploy:
+#    docker:
+#      - image: circleci/python
+#    steps:
+#      - kubernetes/install
+#      - run:
+#          name: Load cluster configuration into kubectl
+#          command: |
+#            kops export kubecfg --name $KOPS_CLUSTER_NAME
+#      - run:
+#          name: Update images on deployments
+#          command: |
+#            kubectl set image deployment/fpm fpm=$AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1 --namespace=hello-chef-production
+#            kubectl set image deployment/scheduler scheduler=$AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1 --namespace=hello-chef-production
+#            kubectl set image deployment/web web=$AWS_ECR_ACCOUNT_URL/hello-chef-api-web:$CIRCLE_SHA1 --namespace=hello-chef-production
+#            kubectl set image deployment/worker worker=$AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1 --namespace=hello-chef-production
+#  deploy-staging:
+#    docker:
+#      - image: circleci/python
+#    steps:
+#      - kubernetes/install
+#      - run:
+#          name: Load cluster configuration into kubectl
+#          command: |
+#            kops export kubecfg --name $KOPS_CLUSTER_NAME
+#      - run:
+#          name: Update images on deployments
+#          command: |
+#            kubectl set image deployment/fpm fpm=$AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1 --namespace=hello-chef-staging
+#            kubectl set image deployment/web web=$AWS_ECR_ACCOUNT_URL/hello-chef-api-web:$CIRCLE_SHA1 --namespace=hello-chef-staging
+#            kubectl set image deployment/worker worker=$AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1 --namespace=hello-chef-staging
+#            kubectl set image deployment/scheduler scheduler=$AWS_ECR_ACCOUNT_URL/hello-chef-api:$CIRCLE_SHA1 --namespace=hello-chef-staging
+#workflows:
+#  version: 2
+#  main:
+#    jobs:
+#      - build:
+#          context: amazon-ecr
+#          filters:
+#            tags:
+#              only: /^v.*/
+#            branches:
+#              ignore: /.*/
+#      - build-staging:
+#          context: amazon-ecr
+#          filters:
+#            branches:
+#              only: staging
+#      - copy-staging-data:
+#          context: amazon-s3
+#          requires:
+#            - deploy-staging
+#          filters:
+#            branches:
+#              only: staging
+#      - deploy:
+#          context: kops
+#          requires:
+#            - build
+#          filters:
+#            tags:
+#              only: /^v.*/
+#            branches:
+#              ignore: /.*/
+#      - deploy-staging:
+#          context: kops
+#          requires:
+#            - build-staging
+#          filters:
+#            branches:
+#              only: staging
