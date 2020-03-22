@@ -12,12 +12,10 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - aws-cli/install
-      - aws-cli/configure
-      - aws-ecr/ecr-login
       - run:
           name: Build Docker images
           command: |
+            printf "%s\n\nThis is the env variable.." "$HELLO_WORLD_THIS_IS_ENV"
             docker --version
       - run:
           name: Push images to Amazon ECR
