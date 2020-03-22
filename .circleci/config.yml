@@ -8,6 +8,7 @@ orbs:
 jobs:
   build:
     docker:
+      - image: circleci/php:7.3.3
       - image: circleci/python
     steps:
       - checkout
