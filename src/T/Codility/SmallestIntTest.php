@@ -53,5 +53,6 @@ class SmallestIntTest extends TestCase
         $this->assertEquals(5, $this->solution([1, 3, 6, 4, 1, 2]));
         $this->assertEquals(4, $this->solution([1, 2, 3]));
         $this->assertEquals(1, $this->solution([-1, -3]));
+        $this->assertEquals(1, 22);
     }
 }
